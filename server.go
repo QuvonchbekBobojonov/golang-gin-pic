@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"net/http"
 	"os"
 
 	"github.com/QuvonchbekBobojonov/golang-gin-pic/controller"
@@ -12,15 +13,14 @@ import (
 )
 
 var (
-	videoService   service.VideoService     = service.New()
+	videoService    service.VideoService       = service.New()
 	videoController controller.VideoController = controller.New(videoService)
 )
 
-func setupLogOutPut(){
+func setupLogOutPut() {
 	f, _ := os.Create("gin.log")
 	gin.DefaultWriter = io.MultiWriter(f, os.Stdout)
 }
-
 
 func main() {
 
@@ -40,8 +40,20 @@ func main() {
 	})
 
 	server.POST("/videos", func(ctx *gin.Context) {
-		ctx.JSON(200, videoController.Save(ctx))
+		err := videoController.Save(ctx)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+		} else {
+			ctx.JSON(http.StatusOK, gin.H{
+				"massage": "Video input is valid!!",
+			})
+		}
 	})
 
-	server.Run(":8080")
+	err := server.Run(":8080")
+	if err != nil {
+		return
+	}
 }
